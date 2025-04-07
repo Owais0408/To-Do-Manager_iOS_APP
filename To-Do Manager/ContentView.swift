@@ -8,17 +8,30 @@
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+    @State private var tasks = TaskStorage.shared.loadTasks()
 
-#Preview {
-    ContentView()
+    var body: some View {
+        NavigationView {
+            List {
+                ForEach($tasks) { $task in  // Pass Binding to each task
+                    NavigationLink(destination: TaskDetailView(task: $task)) {
+                        Text(task.title)
+                            .foregroundColor(task.dueDate < Date() ? .red : .primary)
+                    }
+                }
+                .onDelete(perform: deleteTask)
+            }
+            .navigationTitle("Tasks")
+            .navigationBarItems(trailing: NavigationLink("Add Task", destination: AddTaskView(onSave: { newTask in
+                tasks.append(newTask)
+                TaskStorage.shared.saveTasks(tasks)
+            })))
+        }
+    }
+
+    // Delete task from list
+    func deleteTask(at offsets: IndexSet) {
+        tasks.remove(atOffsets: offsets)
+        TaskStorage.shared.saveTasks(tasks) // Save updated task list after deletion
+    }
 }
